@@ -1,7 +1,7 @@
 """
 A tool to notify Docker contianers about changes in mounts on Windows.
 """
-
+import re
 import argparse
 import logging
 
@@ -22,6 +22,7 @@ def main():
     parser.add_argument('host_dir_pattern', metavar='HOST_DIR_PATTERN', type=str, default='*',
                         nargs='?', help='pattern of host directories to be monitored (default: *)')
 
+    parser.add_argument("-e", "--exclude", help="exclude patterns", required=False)
     parser.add_argument("-v", "--verbose", help="increase output verbosity",
                         action="store_true")
     args = parser.parse_args()
@@ -29,7 +30,7 @@ def main():
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
-    monitor = ContainerMonitor(args.container_pattern, args.host_dir_pattern)
+    monitor = ContainerMonitor(args.container_pattern, args.host_dir_pattern, args.exclude)
     try:
         monitor.find_containers()
         monitor.monitor()

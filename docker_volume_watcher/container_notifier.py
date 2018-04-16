@@ -3,6 +3,7 @@ Exports ContainerNotifier enabling to notify containers about file changes in mo
 """
 
 import logging
+import fnmatch
 from os.path import relpath
 import posixpath
 
@@ -24,7 +25,7 @@ class ContainerNotifier(object):
     Notifies container about file changes in binded host-directory.
     """
 
-    def __init__(self, container, host_dir, container_dir):
+    def __init__(self, container, host_dir, container_dir, exclude_patterns):
         """
         Initialize a new instance of ContainerNotifier
 
@@ -36,8 +37,11 @@ class ContainerNotifier(object):
         self.container = container
         self.host_dir = host_dir
         self.container_dir = container_dir
+        self.exclude_patterns = exclude_patterns
 
-        event_handler = PatternMatchingEventHandler(ignore_directories=False)
+        event_handler = PatternMatchingEventHandler(
+            ignore_patterns=exclude_patterns,
+            ignore_directories=True)
         handler = self.__change_handler
         event_handler.on_created = handler
         event_handler.on_moved = handler
@@ -54,6 +58,12 @@ class ContainerNotifier(object):
         host_path = event.dest_path if hasattr(event, 'dest_path') else event.src_path
         relative_host_path = relpath(host_path, self.host_dir).replace('\\', '/')
         absolute_path = posixpath.join(self.container_dir, relative_host_path)
+
+        if self.exclude_patterns:
+            for pattern in self.exclude_patterns:
+                if fnmatch.fnmatch(absolute_path, pattern):
+                    return
+
         self.notify(absolute_path)
 
     def notify(self, absolute_path):

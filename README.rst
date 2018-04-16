@@ -44,6 +44,14 @@ You can also specify wildcards with ``*`` and ``?`` characters. For example: mon
     docker-volume-watcher *myproject* C:\project\folder\*
 
 
+You can specify excluding patterns to skip monitoring for some directories/files i.e. .pyc, .git etc.
+
+
+.. code:: bat
+
+   docker-volume-watcher -e "*.pyc**, *.idea**, *.git**, **__**"
+
+
 Use flag ``-v`` to enable verbose output: the script will report start/stop events of eligible containers and print all detected file changes.
 
 Limitations

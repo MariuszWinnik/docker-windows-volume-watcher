@@ -12,6 +12,13 @@ import docker
 
 from docker_volume_watcher.container_notifier import ContainerNotifier
 
+def get_list(value, separator=','):
+    """
+    Converts argument value to list of values.
+    """
+    pattern = re.compile(r'\s+')
+    text = re.sub(pattern, '', value)
+    return text.split(separator)
 
 def docker_bind_to_windows_path(path):
     """
@@ -35,7 +42,7 @@ class ContainerMonitor(object):
     """
     Monitors container start/stop events and creates notifiers for mounts matching patterns.
     """
-    def __init__(self, container_name_pattern, host_dir_pattern):
+    def __init__(self, container_name_pattern, host_dir_pattern, exclude_patterns=None):
         """
         Initialize new instance of ContainerMonitor
 
@@ -46,6 +53,11 @@ class ContainerMonitor(object):
         self.client = docker.from_env()
         self.container_name_pattern = container_name_pattern
         self.host_dir_pattern = host_dir_pattern
+        self.exclude_patterns = exclude_patterns
+
+        if exclude_patterns:
+            self.exclude_patterns = get_list(exclude_patterns)
+
         self.notifiers = {}
 
     def __handle_event(self, event):
@@ -109,7 +121,8 @@ class ContainerMonitor(object):
                     'Bind of container %s was skipped for path %s as it\'s not a directory',
                     container_name, mount['Source'])
                 continue
-            notifier = ContainerNotifier(container, host_directory, mount['Destination'])
+            notifier = ContainerNotifier(
+                container, host_directory, mount['Destination'], self.exclude_patterns)
             notifiers.append(notifier)
             logging.info('Notifier %s created.', notifier)
         return notifiers
